@@ -61,7 +61,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
             length: Math.round(
               (totalCount *
                 parseFloat(Object.values(ele)[0].replace('%', ''))) /
-                100
+              100
             ),
           },
           () => Object.keys(ele)[0]
@@ -74,21 +74,55 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
     let csvContent = [];
 
     for (let i = totalCount - 1; i >= 0; i--) {
+
       let csvRow = {};
-      let url = externalUrl + '/?';
+      let url;
+      
+      while (1) {
 
-      filteredKey.map((key) => {
-        const index = Math.floor(Math.random() * i);
-        csvRow = {
-          ...csvRow,
-          [`attributes[${key}]`]: analyzedData[key][index],
-        };
-        url += `${key}=${analyzedData[key][index]}&`;
+        csvRow = {}
+        url = externalUrl + '/?';
 
-        const newArrOfKey = analyzedData[key];
-        newArrOfKey.splice(index, 1);
-        analyzedData = { ...analyzedData, [key]: newArrOfKey };
-      });
+        let indexOfKey = {};
+
+        filteredKey.map((key) => {
+          const index = Math.floor(Math.random() * i);
+          csvRow = {
+            ...csvRow,
+            [`attributes[${key}]`]: analyzedData[key][index],
+          };
+          url += `${key}=${analyzedData[key][index]}&`;
+          indexOfKey = { ...indexOfKey, [key]: index }
+        });
+
+
+        if (csvContent.find(row => row.external_url === url.slice(0, -1))) {
+          continue;
+        } 
+        else if ( csvRow["attributes[Background]"].includes("Black")) {
+          const indexOfMaterial = analyzedData.Material.indexOf("Glow")
+          csvRow = {
+            ...csvRow,
+            'attributes[Material]' : analyzedData.Material[indexOfMaterial]
+          }
+          indexOfKey = { ...indexOfKey, Material: indexOfMaterial}
+
+          filteredKey.map((key) => {
+            const newArrOfKey = analyzedData[key];
+            newArrOfKey.splice(indexOfKey[key], 1);
+            analyzedData = { ...analyzedData, [key]: newArrOfKey };
+          })
+          break;
+        } 
+        else {
+          filteredKey.map((key) => {
+            const newArrOfKey = analyzedData[key];
+            newArrOfKey.splice(indexOfKey[key], 1);
+            analyzedData = { ...analyzedData, [key]: newArrOfKey };
+          })
+          break;
+        }
+      }
 
       csvRow = {
         ...csvRow,
@@ -125,17 +159,17 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
 
-    csvContent.forEach((content, index) => {
-      const imagePaths = [
-        './assets/backgrounds/' + content['attributes[Background]'] + '.png',
-        './assets/models/' +
-          content['attributes[Name]'] +
-          '/' +
-          content['attributes[Material]'] +
-          '.png',
-      ];
-      combineImages(imagePaths, `${outputImagePath}/${index + 1}.png`);
-    });
+    // csvContent.forEach((content, index) => {
+    //   const imagePaths = [
+    //     './assets/backgrounds/' + content['attributes[Background]'] + '.png',
+    //     './assets/models/' +
+    //       content['attributes[Name]'] +
+    //       '/' +
+    //       content['attributes[Material]'] +
+    //       '.png',
+    //   ];
+    //   combineImages(imagePaths, `${outputImagePath}/${index + 1}.png`);
+    // });
   }
 };
 
