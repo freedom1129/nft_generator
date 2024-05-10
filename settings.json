@@ -1,0 +1,8 @@
+{
+  "inputFilePath": "./input.csv",
+  "outputFilePath": "./output/metadata-file.csv",
+  "outputImagePath": "./output/media",
+  "totalCount": 1000,
+  "description": "This is the sample nft.",
+  "externalUrl": "https://example.com"
+}
