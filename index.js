@@ -98,7 +98,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
         if (csvRow["attributes[Material]"] === "Glow") {
 
           const indexesOfBlack = [];
-          
+
           analyzedData.Background.forEach((ele, index) => {
             if (ele.includes("Black")) {
               indexesOfBlack.push(index);
@@ -114,6 +114,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
           indexOfKey = { ...indexOfKey, Background: indexesOfBlack[randomIndex] }
 
+          url = externalUrl + '/?';
           filteredKey.forEach((key) => {
             url += `${key}=${analyzedData[key][indexOfKey[key]]}&`;
           })
