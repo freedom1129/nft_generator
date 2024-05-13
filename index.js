@@ -11,6 +11,7 @@ const {
   inputFilePath,
   outputFilePath,
   outputImagePath,
+  outputJsonPath,
   totalCount,
   description,
   externalUrl,
@@ -165,11 +166,23 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       header: csvHeader,
     });
 
+    csvContent.forEach((content, ind) => {
+      
+      const contentJSON = JSON.stringify(content, null, 2); // The second argument (null) is for the replacer function, and the third argument (2) is for indentation.
+      // Write JSON string to a file
+      fs.writeFile(`${outputJsonPath}/${ind + 1}.json`, contentJSON, (err) => {
+        if (err) {
+          console.error('Error writing to file:', err);
+          return;
+        }
+        console.log('Data has been written to data.json');
+      });
+    })
+
     csvWriter
       .writeRecords(csvContent)
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
-
     // csvContent.forEach((content, index) => {
     //   const imagePaths = [
     //     './assets/backgrounds/' + content['attributes[Background]'] + '.png',
