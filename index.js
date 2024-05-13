@@ -187,7 +187,9 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       header: csvHeader,
     });
 
-    csvContent.forEach((content, ind) => {
+    const shufffledCsvContent = shuffleArray(csvContent);
+
+    shufffledCsvContent.forEach((content, ind) => {
 
       const attributes = [];
 
@@ -217,7 +219,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
     })
 
     csvWriter
-      .writeRecords(csvContent)
+      .writeRecords(shufffledCsvContent)
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
     // csvContent.forEach((content, index) => {
@@ -250,6 +252,16 @@ async function combineImages(imagePaths, outputPath) {
   } catch (error) {
     console.error(error);
   }
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); // Generate random index from 0 to i
+
+      // Swap elements at i and j
+      [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
 parseCSV(inputFilePath, totalCount, description, handleParsedCSVData);
