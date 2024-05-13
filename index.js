@@ -77,7 +77,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
       let csvRow = {};
       let url;
-      
+
       while (1) {
 
         csvRow = {}
@@ -95,25 +95,35 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
           indexOfKey = { ...indexOfKey, [key]: index }
         });
 
+        if (csvRow["attributes[Material]"] === "Glow") {
+
+          const indexesOfBlack = [];
+          
+          analyzedData.Background.forEach((ele, index) => {
+            if (ele.includes("Black")) {
+              indexesOfBlack.push(index);
+            }
+          })
+
+          const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length - 1))
+
+          csvRow = {
+            ...csvRow,
+            'attributes[Background]': analyzedData.Background[indexesOfBlack[randomIndex]]
+          }
+
+          indexOfKey = { ...indexOfKey, Background: indexesOfBlack[randomIndex] }
+
+          filteredKey.forEach((key) => {
+            url += `${key}=${analyzedData[key][indexOfKey[key]]}&`;
+          })
+
+        }
+
 
         if (csvContent.find(row => row.external_url === url.slice(0, -1))) {
           continue;
-        } 
-        else if ( csvRow["attributes[Background]"].includes("Black")) {
-          const indexOfMaterial = analyzedData.Material.indexOf("Glow")
-          csvRow = {
-            ...csvRow,
-            'attributes[Material]' : analyzedData.Material[indexOfMaterial]
-          }
-          indexOfKey = { ...indexOfKey, Material: indexOfMaterial}
-
-          filteredKey.map((key) => {
-            const newArrOfKey = analyzedData[key];
-            newArrOfKey.splice(indexOfKey[key], 1);
-            analyzedData = { ...analyzedData, [key]: newArrOfKey };
-          })
-          break;
-        } 
+        }
         else {
           filteredKey.map((key) => {
             const newArrOfKey = analyzedData[key];
