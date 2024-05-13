@@ -86,47 +86,68 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
         let indexOfKey = {};
 
-        filteredKey.map((key) => {
-          const index = Math.floor(Math.random() * i);
-          csvRow = {
-            ...csvRow,
-            [`attributes[${key}]`]: analyzedData[key][index],
-          };
-          url += `${key}=${analyzedData[key][index]}&`;
-          indexOfKey = { ...indexOfKey, [key]: index }
-        });
+        if (analyzedData.Material.includes('Glow')) {
+          const indexOfGlow = analyzedData.Material.indexOf('Glow')
 
-        if (csvRow["attributes[Material]"] === "Glow") {
+          filteredKey.map((key) => {
+            const index = Math.floor(Math.random() * i);
+            if (key === 'Material') {
+             
+              csvRow = {
+                ...csvRow,
+                [`attributes[${key}]`]: 'Glow'
+              }
+              url += `${key}=${analyzedData[key][indexOfGlow]}&`;
+              indexOfKey[key] = indexOfGlow
+            } else if (key === 'Background') {
 
-          const indexesOfBlack = [];
+              const indexesOfBlack = [];
 
-          analyzedData.Background.forEach((ele, index) => {
-            if (ele.includes("Black")) {
-              indexesOfBlack.push(index);
+              analyzedData.Background.forEach((ele, index) => {
+                if (ele.includes('Black')) {
+                  indexesOfBlack.push(index);
+                }
+              })
+
+              const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length - 1))
+
+              csvRow = {
+                ...csvRow,
+                [`attributes[${key}]`]: analyzedData.Background[indexesOfBlack[randomIndex]]
+              }
+
+              url += `${key}=${analyzedData[key][indexesOfBlack[randomIndex]]}&`;
+              indexOfKey[key] = indexesOfBlack[randomIndex];
+
+            } else {
+
+              csvRow = {
+                ...csvRow,
+                [`attributes[${key}]`]: analyzedData[key][index],
+              };
+
+              url += `${key}=${analyzedData[key][index]}&`;
+              indexOfKey[key] = index;
             }
-          })
+          });
 
-          const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length - 1))
+          console.log(url)
 
-          csvRow = {
-            ...csvRow,
-            'attributes[Background]': analyzedData.Background[indexesOfBlack[randomIndex]]
-          }
-
-          indexOfKey = { ...indexOfKey, Background: indexesOfBlack[randomIndex] }
-
-          url = externalUrl + '/?';
-          filteredKey.forEach((key) => {
-            url += `${key}=${analyzedData[key][indexOfKey[key]]}&`;
-          })
-
+        } else {
+          filteredKey.map((key) => {
+            const index = Math.floor(Math.random() * i);
+            csvRow = {
+              ...csvRow,
+              [`attributes[${key}]`]: analyzedData[key][index],
+            };
+            url += `${key}=${analyzedData[key][index]}&`;
+            indexOfKey[key] = index;
+          });
         }
-
 
         if (csvContent.find(row => row.external_url === url.slice(0, -1))) {
           continue;
-        }
-        else {
+        } else {
           filteredKey.map((key) => {
             const newArrOfKey = analyzedData[key];
             newArrOfKey.splice(indexOfKey[key], 1);
@@ -167,10 +188,26 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
     });
 
     csvContent.forEach((content, ind) => {
-      
-      const contentJSON = JSON.stringify(content, null, 2); // The second argument (null) is for the replacer function, and the third argument (2) is for indentation.
+
+      const attributes = [];
+
+      filteredKey.forEach((key) => {
+        attributes.push({
+          "trait_type": key,
+          "value": content[`attributes[${key}]`]
+        })
+      })
+
+      const formattedContent = {
+        "description": content.description,
+        "external_url": content.external_url,
+        "name": content.name,
+        "attributes": attributes
+      }
+
+      const stringfiedContent = JSON.stringify(formattedContent, null, 2); // The second argument (null) is for the replacer function, and the third argument (2) is for indentation.
       // Write JSON string to a file
-      fs.writeFile(`${outputJsonPath}/${ind + 1}.json`, contentJSON, (err) => {
+      fs.writeFile(`${outputJsonPath}/${ind + 1}.json`, stringfiedContent, (err) => {
         if (err) {
           console.error('Error writing to file:', err);
           return;
