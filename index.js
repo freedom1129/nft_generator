@@ -92,7 +92,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
           filteredKey.map((key) => {
             const index = Math.floor(Math.random() * i);
             if (key === 'Material') {
-             
+
               csvRow = {
                 ...csvRow,
                 [`attributes[${key}]`]: 'Glow'
@@ -256,10 +256,23 @@ async function combineImages(imagePaths, outputPath) {
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1)); // Generate random index from 0 to i
+    const j = Math.floor(Math.random() * (i + 1)); // Generate random index from 0 to i
 
-      // Swap elements at i and j
-      [array[i], array[j]] = [array[j], array[i]];
+    // Swap elements at i and j
+    const tempUrl = array[j].external_url;
+    const tempBG = array[j]['attributes[Background]'];
+    const tempName = array[j]['attributes[Name]'];
+    const tempMaterial= array[j]['attributes[Material]'];
+
+    array[j].external_url = array[i].external_url;
+    array[j]['attributes[Background]'] = array[i]['attributes[Background]'];
+    array[j]['attributes[Name]'] = array[i]['attributes[Name]'];
+    array[j]['attributes[Material]'] = array[i]['attributes[Material]'];
+
+    array[i].external_url = tempUrl;
+    array[i]['attributes[Background]'] = tempBG; 
+    array[i]['attributes[Name]'] = tempName;
+    array[i]['attributes[Material]'] = tempMaterial;
   }
   return array;
 }
