@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "csv-gen": "node csv_gen.js",
+    "image-gen": "node image_gen.js",
+    "json-gen": "node json_gen.js"
   },
   "author": "",
   "license": "ISC",

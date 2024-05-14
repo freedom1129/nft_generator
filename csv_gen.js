@@ -132,8 +132,6 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
             }
           });
 
-          console.log(url)
-
         } else {
           filteredKey.map((key) => {
             const index = Math.floor(Math.random() * i);
@@ -190,71 +188,14 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
     const shufffledCsvContent = shuffleArray(csvContent);
 
-    shufffledCsvContent.forEach((content, ind) => {
-
-      const attributes = [];
-
-      filteredKey.forEach((key) => {
-        attributes.push({
-          "trait_type": key,
-          "value": content[`attributes[${key}]`]
-        })
-      })
-
-      const formattedContent = {
-        "description": content.description,
-        "external_url": content.external_url,
-        "name": content.name,
-        "image": `${nftStoreUrl}/${content.tokenID}`,
-        "attributes": attributes
-      }
-
-      const stringfiedContent = JSON.stringify(formattedContent, null, 2); // The second argument (null) is for the replacer function, and the third argument (2) is for indentation.
-      // Write JSON string to a file
-      fs.writeFile(`${outputJsonPath}/${ind + 1}.json`, stringfiedContent, (err) => {
-        if (err) {
-          console.error('Error writing to file:', err);
-          return;
-        }
-        console.log('Data has been written to data.json');
-      });
-    })
-
     csvWriter
       .writeRecords(shufffledCsvContent)
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
-    // csvContent.forEach((content, index) => {
-    //   const imagePaths = [
-    //     './assets/backgrounds/' + content['attributes[Background]'] + '.png',
-    //     './assets/models/' +
-    //       content['attributes[Name]'] +
-    //       '/' +
-    //       content['attributes[Material]'] +
-    //       '.png',
-    //   ];
-    //   combineImages(imagePaths, `${outputImagePath}/${index + 1}.png`);
-    // });
+    
   }
 };
 
-async function combineImages(imagePaths, outputPath) {
-  try {
-    const headImage = await sharp(imagePaths[1]).resize({
-      width: 1024,
-      height: 1024,
-    }).toBuffer();
-
-    sharp(imagePaths[0])
-      .resize(1024)
-      .composite([{ input: headImage }])
-      .toFile(outputPath);
-
-    console.log('Composited image saved successfully.');
-  } catch (error) {
-    console.error(error);
-  }
-}
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
