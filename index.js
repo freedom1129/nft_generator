@@ -15,6 +15,7 @@ const {
   totalCount,
   description,
   externalUrl,
+  nftStoreUrl
 } = settings;
 
 // Function to parse CSV file
@@ -204,6 +205,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
         "description": content.description,
         "external_url": content.external_url,
         "name": content.name,
+        "image": `${nftStoreUrl}/${content.tokenID}`,
         "attributes": attributes
       }
 
