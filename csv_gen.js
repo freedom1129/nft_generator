@@ -77,6 +77,8 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
     for (let i = totalCount - 1; i >= 0; i--) {
 
+      console.log(totalCount - i)
+
       let csvRow = {};
       let url;
 
@@ -89,9 +91,8 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
 
         if (analyzedData.Material.includes('Glow')) {
           const indexOfGlow = analyzedData.Material.indexOf('Glow')
-
           filteredKey.map((key) => {
-            const index = Math.floor(Math.random() * i);
+            const index = Math.floor(Math.random() * (i + 1));
             if (key === 'Material') {
 
               csvRow = {
@@ -110,7 +111,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
                 }
               })
 
-              const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length - 1))
+              const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length))
 
               csvRow = {
                 ...csvRow,
@@ -132,9 +133,34 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
             }
           });
 
-        } else {
+        } else if (analyzedData.Material.includes('Original')) {
+          const indexOfOriginal = analyzedData.Material.indexOf('Original');
           filteredKey.map((key) => {
-            const index = Math.floor(Math.random() * i);
+            const index = Math.floor(Math.random() * (i + 1));
+            if (key === 'Material') {
+
+              csvRow = {
+                ...csvRow,
+                [`attributes[${key}]`]: 'Original'
+              }
+              url += `${key}=${analyzedData[key][indexOfOriginal]}&`;
+              indexOfKey[key] = indexOfOriginal
+            } else {
+
+              csvRow = {
+                ...csvRow,
+                [`attributes[${key}]`]: analyzedData[key][index],
+              };
+
+              url += `${key}=${analyzedData[key][index]}&`;
+              indexOfKey[key] = index;
+            }
+          });
+        }
+
+        else {
+          filteredKey.map((key) => {
+            const index = Math.floor(Math.random() * (i + 1));
             csvRow = {
               ...csvRow,
               [`attributes[${key}]`]: analyzedData[key][index],
@@ -143,6 +169,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
             indexOfKey[key] = index;
           });
         }
+
 
         if (csvContent.find(row => row.external_url === url.slice(0, -1))) {
           continue;
@@ -164,7 +191,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
         file_name: `${totalCount - i}.png`,
         external_url: url.slice(0, -1),
       };
-
+      console.log(analyzedData)
       csvContent.push(csvRow);
     }
 
@@ -192,7 +219,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       .writeRecords(shufffledCsvContent)
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
-    
+
   }
 };
 
@@ -205,7 +232,7 @@ function shuffleArray(array) {
     const tempUrl = array[j].external_url;
     const tempBG = array[j]['attributes[Background]'];
     const tempName = array[j]['attributes[Name]'];
-    const tempMaterial= array[j]['attributes[Material]'];
+    const tempMaterial = array[j]['attributes[Material]'];
 
     array[j].external_url = array[i].external_url;
     array[j]['attributes[Background]'] = array[i]['attributes[Background]'];
@@ -213,7 +240,7 @@ function shuffleArray(array) {
     array[j]['attributes[Material]'] = array[i]['attributes[Material]'];
 
     array[i].external_url = tempUrl;
-    array[i]['attributes[Background]'] = tempBG; 
+    array[i]['attributes[Background]'] = tempBG;
     array[i]['attributes[Name]'] = tempName;
     array[i]['attributes[Material]'] = tempMaterial;
   }
