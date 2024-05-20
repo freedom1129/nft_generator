@@ -1,6 +1,6 @@
 {
   "inputFilePath": "./input.csv",
-  "outputFilePath": "./output/metadata-file.csv",
+  "outputCSVPath": "./output/metadata-file.csv",
   "outputImagePath": "./output/media",
   "outputJsonPath": "./output/json",
   "totalCount": 1000,

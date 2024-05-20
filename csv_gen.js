@@ -5,11 +5,12 @@ const { createObjectCsvWriter } = require('csv-writer');
 const sharp = require('sharp');
 
 const settings = require('./settings.json');
+const { parse } = require('path');
 
 // Destructure settings object
 const {
   inputFilePath,
-  outputFilePath,
+  outputCSVPath,
   outputImagePath,
   outputJsonPath,
   totalCount,
@@ -17,6 +18,9 @@ const {
   externalUrl,
   nftStoreUrl
 } = settings;
+
+const priority = ['Glow', 'Rainbow', 'Rainbow2', 'Wireframe'];
+
 
 // Function to parse CSV file
 const parseCSV = (inputFilePath, totalCount, description, callback) => {
@@ -39,25 +43,28 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
   if (err) {
     console.error(err);
   } else {
-    const keys = Object.keys(data[0]);
-    const filteredKey = keys.filter((str) => !str.includes('Percent'));
+    const attrs = Object.keys(data[0]).filter((str) => !str.includes('Percent'));;
+    const attrType = {}
     let parsedData = {};
     let valueOfKey = [];
-    filteredKey.map((key) => {
+    attrs.map((attr) => {
+      const typesOfAttrs = [];
       data.map((item) => {
-        if (item[key]) {
-          valueOfKey.push({ [item[key]]: item[`${key}_Percent`] });
+        if (item[attr]) {
+          valueOfKey.push({ [item[attr]]: item[`${attr}_Percent`] });
+          typesOfAttrs.push(item[attr])
         }
       });
-      parsedData = { ...parsedData, [key]: valueOfKey };
+      attrType[attr] = typesOfAttrs;
+      parsedData = { ...parsedData, [attr]: valueOfKey };
       valueOfKey = [];
     });
 
     let analyzedData = {};
 
-    filteredKey.forEach((key) => {
+    attrs.forEach((attr) => {
       let attrArr = [];
-      parsedData[key].forEach((ele) => {
+      parsedData[attr].forEach((ele) => {
         const arr = Array.from(
           {
             length: Math.round(
@@ -70,130 +77,109 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
         );
         attrArr = [...attrArr, ...arr];
       });
-      analyzedData = { ...analyzedData, [key]: attrArr };
+      let randomAttrArr;
+      if (attr !== 'Material') {
+        randomAttrArr = shuffleArray(attrArr);
+      } else {
+        randomAttrArr = attrArr.sort(sortByPriority);
+      }
+      analyzedData = { ...analyzedData, [attr]: randomAttrArr };
     });
 
-    let csvContent = [];
+    const csvContent = [];
+    let combs = [];
+    let usedComb = [];
+    let currentIndex = {};
+    attrs.forEach((attr) => {
+      currentIndex = { ...currentIndex, [attr]: 0 }
+    })
 
-    for (let i = totalCount - 1; i >= 0; i--) {
+    while (combs.length < totalCount) {
+      let newComb = '';
+      let bannedRule = false;
 
-      console.log(totalCount - i)
 
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Glow' &&
+        !analyzedData.Background[currentIndex.Background].includes('Black')
+      ) { bannedRule = true; }
+
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Glow' &&
+        analyzedData.Name[currentIndex.Name].includes('_low')
+      ) { bannedRule = true; }
+
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Rainbow' &&
+        analyzedData.Name[currentIndex.Name].includes('_low')
+      ) { bannedRule = true; }
+
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Rainbow2' &&
+        analyzedData.Name[currentIndex.Name].includes('_low')
+      ) { bannedRule = true; }
+
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Wireframe' &&
+        !analyzedData.Name[currentIndex.Name].includes('_low')
+      ) { bannedRule = true; }
+
+
+      attrs.forEach((attr) => {
+        newComb += analyzedData[attr][currentIndex[attr]] + '-';
+      })
+      if (checkUsedCombination(newComb, usedComb) || bannedRule) {
+        let loopForward = 1;
+        attrs.forEach(attr => {
+          currentIndex[attr] += loopForward;
+          if (currentIndex[attr] < analyzedData[attr].length) loopForward = 0
+          else {
+            currentIndex[attr] = 0;
+            loopForward = 1;
+          }
+        })
+        if (loopForward) {
+          if (!csvContent.length) {
+            console.error('Could not find proper combinations. Please try agian');
+            process.exit(1);
+          }
+          const lastComb = combs.pop()
+          attrs.forEach(attr => {
+            analyzedData[attr].push(lastComb[attr])
+          })
+        }
+      } else {
+        usedComb.push(newComb)
+        let comb = {};
+        comb.external_url = '';
+        attrs.forEach(attr => {
+          comb[attr] = analyzedData[attr][currentIndex[attr]];
+          comb.external_url += `${attr}=${analyzedData[attr][currentIndex[attr]]}&`
+        })
+        combs.push(comb);
+        console.log(comb.Material, combs.length);
+        attrs.map((attr) => {
+          const newArrOfAttr = analyzedData[attr];
+          newArrOfAttr.splice(currentIndex[attr], 1);
+          analyzedData = { ...analyzedData, [attr]: newArrOfAttr };
+          currentIndex[attr] = 0;
+        })
+      }
+    }
+
+    combs.forEach((comb, ind) => {
       let csvRow = {};
       let url;
-
-      while (1) {
-
-        csvRow = {}
-        url = externalUrl + '/?';
-
-        let indexOfKey = {};
-
-        if (analyzedData.Material.includes('Glow')) {
-          const indexOfGlow = analyzedData.Material.indexOf('Glow')
-          filteredKey.map((key) => {
-            const index = Math.floor(Math.random() * (i + 1));
-            if (key === 'Material') {
-
-              csvRow = {
-                ...csvRow,
-                [`attributes[${key}]`]: 'Glow'
-              }
-              url += `${key}=${analyzedData[key][indexOfGlow]}&`;
-              indexOfKey[key] = indexOfGlow
-            } else if (key === 'Background') {
-
-              const indexesOfBlack = [];
-
-              analyzedData.Background.forEach((ele, index) => {
-                if (ele.includes('Black')) {
-                  indexesOfBlack.push(index);
-                }
-              })
-
-              const randomIndex = Math.floor(Math.random() * (indexesOfBlack.length))
-
-              csvRow = {
-                ...csvRow,
-                [`attributes[${key}]`]: analyzedData.Background[indexesOfBlack[randomIndex]]
-              }
-
-              url += `${key}=${analyzedData[key][indexesOfBlack[randomIndex]]}&`;
-              indexOfKey[key] = indexesOfBlack[randomIndex];
-
-            } else {
-
-              csvRow = {
-                ...csvRow,
-                [`attributes[${key}]`]: analyzedData[key][index],
-              };
-
-              url += `${key}=${analyzedData[key][index]}&`;
-              indexOfKey[key] = index;
-            }
-          });
-
-        } else if (analyzedData.Material.includes('Original')) {
-          const indexOfOriginal = analyzedData.Material.indexOf('Original');
-          filteredKey.map((key) => {
-            const index = Math.floor(Math.random() * (i + 1));
-            if (key === 'Material') {
-
-              csvRow = {
-                ...csvRow,
-                [`attributes[${key}]`]: 'Original'
-              }
-              url += `${key}=${analyzedData[key][indexOfOriginal]}&`;
-              indexOfKey[key] = indexOfOriginal
-            } else {
-
-              csvRow = {
-                ...csvRow,
-                [`attributes[${key}]`]: analyzedData[key][index],
-              };
-
-              url += `${key}=${analyzedData[key][index]}&`;
-              indexOfKey[key] = index;
-            }
-          });
-        }
-
-        else {
-          filteredKey.map((key) => {
-            const index = Math.floor(Math.random() * (i + 1));
-            csvRow = {
-              ...csvRow,
-              [`attributes[${key}]`]: analyzedData[key][index],
-            };
-            url += `${key}=${analyzedData[key][index]}&`;
-            indexOfKey[key] = index;
-          });
-        }
-
-
-        if (csvContent.find(row => row.external_url === url.slice(0, -1))) {
-          continue;
-        } else {
-          filteredKey.map((key) => {
-            const newArrOfKey = analyzedData[key];
-            newArrOfKey.splice(indexOfKey[key], 1);
-            analyzedData = { ...analyzedData, [key]: newArrOfKey };
-          })
-          break;
-        }
-      }
-
-      csvRow = {
-        ...csvRow,
-        tokenID: totalCount - i,
-        name: `item${totalCount - i}`,
-        description: description,
-        file_name: `${totalCount - i}.png`,
-        external_url: url.slice(0, -1),
-      };
-      console.log(analyzedData)
+      attrs.forEach(attr => {
+        csvRow[`attributes[${attr}]`] = comb[attr]
+      })
+      csvRow.tokenID = ind + 1;
+      csvRow.name = `item${ind + 1}`;
+      csvRow.description = description;
+      csvRow.file_name = `${ind + 1}.png`
+      csvRow.external_url = externalUrl + '/' + comb.external_url
       csvContent.push(csvRow);
-    }
+    })
 
     const csvHeader = [];
 
@@ -205,26 +191,36 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       { id: 'external_url', title: 'external_url' }
     );
 
-    filteredKey.map((key) =>
-      csvHeader.push({ id: `attributes[${key}]`, title: `attributes[${key}]` })
+    attrs.map((attr) =>
+      csvHeader.push({ id: `attributes[${attr}]`, title: `attributes[${attr}]` })
     );
+
     const csvWriter = createObjectCsvWriter({
-      path: outputFilePath,
+      path: outputCSVPath,
       header: csvHeader,
     });
 
-    const shufffledCsvContent = shuffleArray(csvContent);
+    const shufffledCsvContent = shuffleCSVContent(csvContent);
 
     csvWriter
       .writeRecords(shufffledCsvContent)
       .then(() => console.log('CSV file has been written successfully'))
       .catch((err) => console.error('Error writing CSV file:', err));
 
-  }
-};
-
+    console.log(attrs)
+  };
+}
 
 function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // Generate random index from 0 to i
+
+    [array[i], array[j]] = [array[j], array[i]]
+  }
+  return array;
+}
+
+function shuffleCSVContent(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1)); // Generate random index from 0 to i
 
@@ -245,6 +241,33 @@ function shuffleArray(array) {
     array[i]['attributes[Material]'] = tempMaterial;
   }
   return array;
+}
+
+function sortByPriority(a, b) {
+  const priorityIndexA = priority.indexOf(a);
+  const priorityIndexB = priority.indexOf(b);
+
+  // If both elements are in the priority array
+  if (priorityIndexA !== -1 && priorityIndexB !== -1) {
+    return priorityIndexA - priorityIndexB;
+  }
+
+  // If only 'a' is in the priority array
+  if (priorityIndexA !== -1) {
+    return -1;
+  }
+
+  // If only 'b' is in the priority array
+  if (priorityIndexB !== -1) {
+    return 1;
+  }
+
+  // If neither element is in the priority array, sort naturally
+  return a.localeCompare(b);
+}
+
+function checkUsedCombination(newComb, usedComb) {
+  return usedComb.find((comb) => comb === newComb)
 }
 
 parseCSV(inputFilePath, totalCount, description, handleParsedCSVData);
