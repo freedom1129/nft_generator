@@ -19,7 +19,7 @@ const {
   nftStoreUrl
 } = settings;
 
-const priority = ['Glow', 'Rainbow', 'Rainbow2', 'Wireframe'];
+const priority = ['Glow', 'Wireframe', 'Rainbow', 'Rainbow2'];
 
 
 // Function to parse CSV file
@@ -124,6 +124,11 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
         !analyzedData.Name[currentIndex.Name].includes('_low')
       ) { bannedRule = true; }
 
+      if (
+        analyzedData.Material[currentIndex.Material] === 'Wireframe' &&
+        !analyzedData.Background[currentIndex.Background].includes('Black')
+      ) { bannedRule = true; }
+
 
       attrs.forEach((attr) => {
         newComb += analyzedData[attr][currentIndex[attr]] + '-';
@@ -177,7 +182,7 @@ const handleParsedCSVData = (err, totalCount, description, data) => {
       csvRow.name = `item${ind + 1}`;
       csvRow.description = description;
       csvRow.file_name = `${ind + 1}.png`
-      csvRow.external_url = externalUrl + '/' + comb.external_url
+      csvRow.external_url = externalUrl + '/?' + comb.external_url.slice(0, -1)
       csvContent.push(csvRow);
     })
 
